@@ -1,0 +1,74 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.py
+
+# Build directories
+build/
+bin/
+python/
+
+# Test environment and simulators
+test_environment/
+
+# Documentation
+docs/
+*.md
+
+# ISO 14229 standard materials
+ISO_14229_images/
+ISO_14229_pages/
+
+# Coverage reports
+coverage/
+coverage_html/
+*.gcov
+*.gcda
+*.gcno
+coverage.info
+
+# Fuzzing artifacts
+fuzz_findings/
+fuzz_seeds/*.bin
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Backup files
+*.backup
