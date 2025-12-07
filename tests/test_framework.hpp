@@ -121,8 +121,9 @@ private:
 class TestRunner {
 public:
     static TestRunner& instance() {
-        static TestRunner runner;
-        return runner;
+        // Use a pointer to avoid destruction order issues with static registrars
+        static TestRunner* runner = new TestRunner();
+        return *runner;
     }
 
     void add_test(const std::string& name, std::function<void()> test_func) {
