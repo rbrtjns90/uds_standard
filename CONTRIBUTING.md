@@ -5,7 +5,7 @@ Thank you for your interest in contributing to the UDS Standard library!
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/UDS_standard.git`
+2. Clone your fork: `git clone https://github.com/rbrtjns90/UDS_standard.git`
 3. Create a feature branch: `git checkout -b feature/your-feature`
 
 ## Building
