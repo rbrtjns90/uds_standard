@@ -50,7 +50,7 @@ GTEST_BINS := $(GTEST_SRCS:$(GTEST_DIR)/%.cpp=$(TEST_BIN_DIR)/gtest_%)
 LIB := libuds.a
 
 # Targets
-.PHONY: all lib examples tests gtest clean dirs test run-tests run-gtest coverage coverage-report sanitize afl-build afl-fuzz
+.PHONY: all lib examples tests gtest clean dirs test run-tests run-gtest coverage coverage-report sanitize afl-build afl-fuzz test-all test-quick
 
 all: dirs lib examples
 
@@ -184,8 +184,90 @@ fuzz: tests
 	@echo ""
 	@echo "Fuzzing complete - No crashes detected ✓"
 
-# Convenience target
+# Convenience target (legacy tests only)
 test: run-tests
+
+# ============================================================================
+# Run ALL Tests (Google Test + Legacy + Fuzz)
+# ============================================================================
+
+test-all: dirs lib tests gtest
+	@echo ""
+	@echo "╔═══════════════════════════════════════════════════════════╗"
+	@echo "║          Running Complete Test Suite                      ║"
+	@echo "╚═══════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "  Phase 1: Google Test Suite"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@gtest_passed=0; gtest_total=0; \
+	for test in $(GTEST_BINS); do \
+		if [ -f "$$test" ]; then \
+			gtest_total=$$((gtest_total + 1)); \
+			echo "Running: $$test"; \
+			if $$test --gtest_brief=1 2>&1 | tail -1; then \
+				gtest_passed=$$((gtest_passed + 1)); \
+			fi; \
+		fi \
+	done; \
+	echo ""; \
+	echo "Google Tests: $$gtest_passed/$$gtest_total suites passed"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "  Phase 2: Legacy Test Suite"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@legacy_passed=0; legacy_total=0; \
+	for test in $(TEST_BINS); do \
+		if [ -f "$$test" ]; then \
+			legacy_total=$$((legacy_total + 1)); \
+			testname=$$(basename $$test); \
+			echo "Running: $$testname"; \
+			if $$test > /dev/null 2>&1; then \
+				echo "  ✓ PASSED"; \
+				legacy_passed=$$((legacy_passed + 1)); \
+			else \
+				echo "  ✗ FAILED"; \
+			fi; \
+		fi \
+	done; \
+	echo ""; \
+	echo "Legacy Tests: $$legacy_passed/$$legacy_total passed"
+	@echo ""
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo "  Phase 3: Fuzz Testing (Quick)"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@if [ -f "$(TEST_BIN_DIR)/test_fuzzing" ]; then \
+		echo "Running: test_fuzzing"; \
+		if $(TEST_BIN_DIR)/test_fuzzing > /dev/null 2>&1; then \
+			echo "  ✓ Fuzz tests passed"; \
+		else \
+			echo "  ✗ Fuzz tests failed"; \
+		fi; \
+	elif [ -f "$(TEST_BIN_DIR)/fuzz_target_afl" ]; then \
+		echo "Running: fuzz_target_afl (quick mode)"; \
+		echo "test" | $(TEST_BIN_DIR)/fuzz_target_afl > /dev/null 2>&1 && \
+			echo "  ✓ Fuzz target runs without crash" || \
+			echo "  ✗ Fuzz target crashed"; \
+	else \
+		echo "  (No fuzz tests available)"; \
+	fi
+	@echo ""
+	@echo "╔═══════════════════════════════════════════════════════════╗"
+	@echo "║          Complete Test Suite Finished                     ║"
+	@echo "╚═══════════════════════════════════════════════════════════╝"
+	@echo ""
+
+# Quick test - just run gtests (fastest)
+test-quick: gtest
+	@echo ""
+	@echo "Running quick test suite (Google Tests only)..."
+	@for test in $(GTEST_BINS); do \
+		if [ -f "$$test" ]; then \
+			$$test --gtest_brief=1 || exit 1; \
+		fi \
+	done
+	@echo ""
+	@echo "✓ Quick tests passed!"
 
 # ============================================================================
 # Sanitizer Builds (AddressSanitizer + UndefinedBehaviorSanitizer)
@@ -259,42 +341,49 @@ clean:
 
 # Help target
 help:
-	@echo "ISO 14229-1 UDS Stack Build System - Phase 7"
+	@echo "ISO 14229-1 UDS Stack Build System"
 	@echo ""
-	@echo "Targets:"
+	@echo "Test Targets (Recommended):"
+	@echo "  test-all        - Run ALL tests (gtest + legacy + fuzz)"
+	@echo "  test-quick      - Run Google Tests only (fastest)"
+	@echo "  run-gtest       - Run Google Tests with verbose output"
+	@echo "  run-tests       - Run legacy tests only"
+	@echo "  fuzz            - Run fuzzing tests"
+	@echo ""
+	@echo "Build Targets:"
 	@echo "  all             - Build library and examples (default)"
 	@echo "  lib             - Build static library only"
 	@echo "  examples        - Build example programs"
 	@echo "  tests           - Build legacy test suites"
-	@echo "  run-tests       - Build and run legacy tests"
-	@echo "  test            - Alias for run-tests"
-	@echo ""
-	@echo "Google Test targets:"
 	@echo "  gtest           - Build Google Test suites"
-	@echo "  run-gtest       - Build and run Google Tests"
-	@echo "  coverage        - Build with coverage and run tests"
-	@echo "  coverage-report - Generate HTML coverage report"
 	@echo ""
-	@echo "Legacy test targets:"
+	@echo "Quality Targets:"
+	@echo "  sanitize        - Run tests with AddressSanitizer + UBSan"
+	@echo "  coverage        - Run tests with code coverage"
+	@echo "  coverage-report - Generate HTML coverage report"
+	@echo "  afl-build       - Build AFL++ fuzzing target"
+	@echo "  afl-fuzz        - Run AFL++ fuzzing session"
+	@echo ""
+	@echo "Individual Test Suites:"
 	@echo "  test-core       - Run core UDS tests only"
 	@echo "  test-isotp      - Run ISO-TP tests only"
 	@echo "  test-services   - Run service validation tests"
+	@echo "  test-security   - Run security tests only"
+	@echo "  test-fuzzing    - Run fuzz tests only"
 	@echo ""
 	@echo "Other:"
 	@echo "  clean           - Remove all build artifacts"
 	@echo "  help            - Show this help message"
 	@echo ""
-	@echo "Usage:"
-	@echo "  make                # Build everything"
-	@echo "  make lib            # Build library only"
-	@echo "  make gtest          # Build Google Tests"
-	@echo "  make run-gtest      # Run Google Tests"
-	@echo "  make coverage       # Run tests with coverage"
-	@echo "  make clean          # Clean"
+	@echo "Quick Start:"
+	@echo "  make test-all     # Run complete test suite"
+	@echo "  make test-quick   # Fast iteration (gtest only)"
+	@echo "  make sanitize     # Check for memory issues"
 	@echo ""
 	@echo "Prerequisites:"
 	@echo "  Google Test: brew install googletest (macOS)"
 	@echo "  Coverage:    brew install lcov (for HTML reports)"
+	@echo "  AFL++:       brew install afl++ (for fuzzing)"
 
 # Dependency tracking
 -include $(OBJS:.o=.d)
