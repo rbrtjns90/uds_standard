@@ -42,7 +42,12 @@ test_environment/
 
 # Documentation
 docs/
-*.md
+DTC/
+
+# Allow important markdown files
+!README.md
+!CONTRIBUTING.md
+!LICENSE.md
 
 # ISO 14229 standard materials
 ISO_14229_images/

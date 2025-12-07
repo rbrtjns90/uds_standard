@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release:
+    name: Build Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: uds-linux
+          - os: macos-latest
+            artifact_name: uds-macos
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+
+    - name: Build library
+      run: make lib
+
+    - name: Build examples
+      run: make examples
+
+    - name: Run tests
+      run: |
+        make gtest
+        make run-gtest
+
+    - name: Package artifacts
+      run: |
+        mkdir -p release
+        cp build/libuds.a release/
+        cp -r include release/
+        cp -r examples release/
+        tar -czvf ${{ matrix.artifact_name }}.tar.gz release/
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: ${{ matrix.artifact_name }}.tar.gz
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Download Linux artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: uds-linux
+
+    - name: Download macOS artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: uds-macos
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          uds-linux.tar.gz
+          uds-macos.tar.gz
+        generate_release_notes: true
