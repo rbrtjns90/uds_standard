@@ -50,7 +50,7 @@ GTEST_BINS := $(GTEST_SRCS:$(GTEST_DIR)/%.cpp=$(TEST_BIN_DIR)/gtest_%)
 LIB := libuds.a
 
 # Targets
-.PHONY: all lib examples tests gtest clean dirs test run-tests run-gtest coverage coverage-report sanitize afl-build afl-fuzz test-all test-quick
+.PHONY: all lib examples tests gtest clean dirs test run-tests run-gtest coverage coverage-report sanitize asan ubsan afl-build afl-fuzz test-all test-quick
 
 all: dirs lib examples
 
@@ -292,6 +292,42 @@ sanitize: clean dirs lib tests
 	@echo "✓ All sanitizer tests passed!"
 	@echo ""
 
+# AddressSanitizer only
+ASAN_FLAGS := -fsanitize=address -fno-omit-frame-pointer -g
+asan: CXXFLAGS += $(ASAN_FLAGS)
+asan: LDFLAGS += $(ASAN_FLAGS)
+asan: clean dirs lib tests
+	@echo ""
+	@echo "╔═══════════════════════════════════════════════════════════╗"
+	@echo "║        Running Tests with AddressSanitizer               ║"
+	@echo "╚═══════════════════════════════════════════════════════════╝"
+	@echo ""
+	@for test in $(TEST_BINS); do \
+		echo "Running $$test with ASan..."; \
+		./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All ASan tests passed!"
+	@echo ""
+
+# UndefinedBehaviorSanitizer only
+UBSAN_FLAGS := -fsanitize=undefined -fno-omit-frame-pointer -g
+ubsan: CXXFLAGS += $(UBSAN_FLAGS)
+ubsan: LDFLAGS += $(UBSAN_FLAGS)
+ubsan: clean dirs lib tests
+	@echo ""
+	@echo "╔═══════════════════════════════════════════════════════════╗"
+	@echo "║        Running Tests with UndefinedBehaviorSanitizer     ║"
+	@echo "╚═══════════════════════════════════════════════════════════╝"
+	@echo ""
+	@for test in $(TEST_BINS); do \
+		echo "Running $$test with UBSan..."; \
+		./$$test || exit 1; \
+	done
+	@echo ""
+	@echo "✓ All UBSan tests passed!"
+	@echo ""
+
 # ============================================================================
 # AFL++ Fuzzing Support
 # ============================================================================
@@ -342,6 +378,8 @@ help:
 	@echo ""
 	@echo "Quality Targets:"
 	@echo "  sanitize        - Run tests with AddressSanitizer + UBSan"
+	@echo "  asan            - Run tests with AddressSanitizer only"
+	@echo "  ubsan           - Run tests with UndefinedBehaviorSanitizer only"
 	@echo "  coverage        - Run tests with code coverage"
 	@echo "  coverage-report - Generate HTML coverage report"
 	@echo "  afl-build       - Build AFL++ fuzzing target"
@@ -368,8 +406,8 @@ help:
 	@echo "  Coverage:    brew install lcov (for HTML reports)"
 	@echo "  AFL++:       brew install afl++ (for fuzzing)"
 
-# Dependency tracking
--include $(OBJS:.o=.d)
+# Dependency tracking (only include if build dir exists)
+-include $(wildcard $(OBJ_DIR)/*.d)
 
-$(OBJ_DIR)/%.d: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.d: $(SRC_DIR)/%.cpp | dirs
 	@$(CXX) $(CXXFLAGS) -MM -MT $(@:.d=.o) $< > $@
