@@ -1,14 +1,14 @@
 # ISO 14229-1 UDS Stack Implementation
 
-[![CI](https://github.com/YOUR_USERNAME/UDS_standard/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/UDS_standard/actions/workflows/ci.yml)
+[![CI](https://github.com/rbrtjns90/UDS_standard/actions/workflows/ci.yml/badge.svg)](https://github.com/rbrtjns90/UDS_standard/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/std/the-standard)
 
-A complete, clean-room C++17 implementation of ISO 14229-1 Unified Diagnostic Services (UDS) for automotive diagnostics and ECU flash programming.
+A complete, C++17 implementation of ISO 14229-1 Unified Diagnostic Services (UDS) for automotive diagnostics and ECU flash programming.
 
 ## Features
 
-### ✅ Implemented Services (Full ISO 14229-1 Coverage)
+### Implemented Services (Full ISO 14229-1 Coverage)
 
 | SID | Service | Module |
 |-----|---------|--------|
@@ -38,11 +38,11 @@ A complete, clean-room C++17 implementation of ISO 14229-1 Unified Diagnostic Se
 | **0x86** | Response On Event | `uds_event.cpp` |
 | **0x87** | Link Control | `uds_link.cpp` |
 
-### 🔧 Transport Layer
+### Transport Layer
 - **ISO-TP** (ISO 15765-2) - Complete implementation with flow control, multi-frame, WT handling
 - **SLCAN** - Serial Line CAN with error frames, timestamps, TX queue with back-pressure
 
-### 🛡️ Advanced Features
+### Advanced Features
 
 #### Core Features
 - Automatic NRC 0x78 (ResponsePending) handling
@@ -306,7 +306,7 @@ make examples
 
 ## Safety & Compliance
 
-### ⚠️ Important Safety Notes
+### Important Safety Notes
 
 - **Always disable DTC setting before flash programming** (Service 0x85)
 - **Test on development/non-critical ECUs first**
@@ -316,10 +316,10 @@ make examples
 
 ### Standards Compliance
 
-- ✅ ISO 14229-1:2020 (UDS) - Unified Diagnostic Services
-- ✅ ISO 15765-2:2016 (ISO-TP) - Diagnostic communication over CAN
-- ✅ Clean-room implementation (no proprietary code)
-- ✅ Production-grade error handling
+- ISO 14229-1:2020 (UDS) - Unified Diagnostic Services
+- ISO 15765-2:2016 (ISO-TP) - Diagnostic communication over CAN
+- Clean-room implementation (no proprietary code)
+- Production-grade error handling
 
 ## Supported Hardware
 
@@ -347,7 +347,7 @@ Contributions are welcome! Please ensure:
 
 ## Roadmap
 
-### Phase 1 ✅ COMPLETE
+### Phase 1 (Complete)
 - Communication Control (0x28)
 - Control DTC Setting (0x85)
 
@@ -371,7 +371,7 @@ All code is original and does not reproduce proprietary implementations.
 
 ---
 
-**Status**: Production Ready ✅
+**Status**: Production Ready
 
 The UDS stack is fully functional and suitable for:
 - ECU diagnostics

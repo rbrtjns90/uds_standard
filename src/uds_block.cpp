@@ -80,16 +80,18 @@ BlockTransferManager::BlockTransferManager(Client& client)
 std::vector<uint8_t> BlockTransferManager::encode_address_and_length(uint32_t address, uint32_t length) {
     std::vector<uint8_t> result;
     
-    // Address and length format identifier
-    uint8_t format = ((address_bytes_ & 0x0F) << 4) | (length_bytes_ & 0x0F);
+    // Per ISO 14229-1 Annex G.1 addressAndLengthFormatIdentifier:
+    //   Bits 7-4 (high nibble) = memorySizeLength (number of bytes for memorySize)
+    //   Bits 3-0 (low nibble)  = memoryAddressLength (number of bytes for memoryAddress)
+    uint8_t format = ((length_bytes_ & 0x0F) << 4) | (address_bytes_ & 0x0F);
     result.push_back(format);
     
-    // Memory address (big-endian)
+    // Memory address first (big-endian)
     for (int i = address_bytes_ - 1; i >= 0; --i) {
         result.push_back(static_cast<uint8_t>((address >> (i * 8)) & 0xFF));
     }
     
-    // Memory size (big-endian)
+    // Memory size second (big-endian)
     for (int i = length_bytes_ - 1; i >= 0; --i) {
         result.push_back(static_cast<uint8_t>((length >> (i * 8)) & 0xFF));
     }

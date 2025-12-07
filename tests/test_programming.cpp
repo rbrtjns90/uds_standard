@@ -286,16 +286,17 @@ TEST(ECUProgrammer_ParseMaxBlockLength) {
     std::cout << "  Testing: ECUProgrammer::parse_max_block_length()" << std::endl;
     
     // Response format: [lengthFormatIdentifier] [maxNumberOfBlockLength...]
-    // lengthFormatIdentifier LOW nibble = number of bytes for maxNumberOfBlockLength (ISO-14229)
-    // Note: parse_max_block_length receives payload without SID
+    // Per ISO 14229-1 Section 14.2.2.2:
+    //   HIGH nibble = number of bytes for maxNumberOfBlockLength
+    //   LOW nibble = reserved (should be 0)
     
-    // Example: 0x02 means 2 bytes for block length (low nibble = 2)
-    std::vector<uint8_t> response1 = {0x02, 0x10, 0x00};  // 4096 bytes
+    // Example: 0x20 means 2 bytes for block length (high nibble = 2)
+    std::vector<uint8_t> response1 = {0x20, 0x10, 0x00};  // 4096 bytes
     uint32_t block_len1 = ECUProgrammer::parse_max_block_length(response1);
     ASSERT_EQ(4096, static_cast<int>(block_len1));
     
-    // Example: 0x01 means 1 byte for block length (low nibble = 1)
-    std::vector<uint8_t> response2 = {0x01, 0xFF};  // 255 bytes
+    // Example: 0x10 means 1 byte for block length (high nibble = 1)
+    std::vector<uint8_t> response2 = {0x10, 0xFF};  // 255 bytes
     uint32_t block_len2 = ECUProgrammer::parse_max_block_length(response2);
     ASSERT_EQ(255, static_cast<int>(block_len2));
 }
@@ -319,7 +320,8 @@ TEST(ECUProgrammer_CalculateBlockCount) {
 TEST(ECUProgrammer_EncodeAddressAndSize) {
     std::cout << "  Testing: ECUProgrammer::encode_address_and_size()" << std::endl;
     
-    // Format 0x44 = 4 bytes address, 4 bytes size
+    // Per ISO 14229-1 ALFI: high nibble = size bytes, low nibble = address bytes
+    // Format 0x44 = 4 bytes size (high), 4 bytes address (low)
     // Result includes: [formatId] + [address bytes] + [size bytes]
     auto encoded = ECUProgrammer::encode_address_and_size(0x08000000, 0x00100000, 0x44);
     
@@ -328,13 +330,13 @@ TEST(ECUProgrammer_EncodeAddressAndSize) {
     // Check format identifier
     ASSERT_EQ(0x44, encoded[0]);
     
-    // Check address bytes (big-endian)
+    // Check address bytes first (big-endian) - low nibble = 4 bytes
     ASSERT_EQ(0x08, encoded[1]);
     ASSERT_EQ(0x00, encoded[2]);
     ASSERT_EQ(0x00, encoded[3]);
     ASSERT_EQ(0x00, encoded[4]);
     
-    // Check size bytes (big-endian)
+    // Check size bytes second (big-endian) - high nibble = 4 bytes
     ASSERT_EQ(0x00, encoded[5]);
     ASSERT_EQ(0x10, encoded[6]);
     ASSERT_EQ(0x00, encoded[7]);

@@ -596,13 +596,16 @@ bool ECUProgrammer::wait_for_routine_completion(RoutineId routine_id,
 }
 
 uint32_t ECUProgrammer::parse_max_block_length(const std::vector<uint8_t>& response) {
-  // Response format: [lengthFormatId, maxNumberOfBlockLength...]
+  // Response format: [lengthFormatIdentifier, maxNumberOfBlockLength...]
+  // Per ISO 14229-1 Section 14.2.2.2 (RequestDownload positive response):
+  //   Bits 7-4 (high nibble) = maxNumberOfBlockLength size in bytes
+  //   Bits 3-0 (low nibble)  = reserved (should be 0)
   if (response.empty()) {
     return 0;
   }
   
   uint8_t length_fmt = response[0];
-  uint8_t num_bytes = length_fmt & 0x0F;  // Low nibble
+  uint8_t num_bytes = (length_fmt >> 4) & 0x0F;  // HIGH nibble per ISO 14229-1
   
   if (num_bytes == 0 || num_bytes > 4 || response.size() < (1 + num_bytes)) {
     return 0;
@@ -627,19 +630,21 @@ std::vector<uint8_t> ECUProgrammer::encode_address_and_size(uint32_t address, ui
                                                              uint8_t addr_len_fmt) {
   std::vector<uint8_t> result;
   
-  // Add format identifier
+  // Add format identifier (ALFI)
   result.push_back(addr_len_fmt);
   
-  // High nibble = address length, low nibble = size length (ISO-14229)
-  uint8_t addr_bytes = (addr_len_fmt >> 4) & 0x0F;
-  uint8_t size_bytes = addr_len_fmt & 0x0F;
+  // Per ISO 14229-1 Annex G.1 addressAndLengthFormatIdentifier:
+  //   Bits 7-4 (high nibble) = memorySizeLength (number of bytes for memorySize)
+  //   Bits 3-0 (low nibble)  = memoryAddressLength (number of bytes for memoryAddress)
+  uint8_t size_bytes = (addr_len_fmt >> 4) & 0x0F;  // High nibble = size length
+  uint8_t addr_bytes = addr_len_fmt & 0x0F;          // Low nibble = address length
   
-  // Encode address (big-endian)
+  // Encode address first (big-endian)
   for (int i = addr_bytes - 1; i >= 0; --i) {
     result.push_back((address >> (i * 8)) & 0xFF);
   }
   
-  // Encode size (big-endian)
+  // Encode size second (big-endian)
   for (int i = size_bytes - 1; i >= 0; --i) {
     result.push_back((size >> (i * 8)) & 0xFF);
   }
