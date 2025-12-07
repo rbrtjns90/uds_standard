@@ -242,8 +242,9 @@ bool ECUProgrammer::step_request_download(uint32_t address, uint32_t size,
   update_state(ProgrammingState::RequestingDownload);
   
   // Decode number of address and size bytes from addr_len_fmt
-  uint8_t addr_bytes = addr_len_fmt & 0x0F;
-  uint8_t size_bytes = (addr_len_fmt >> 4) & 0x0F;
+  // High nibble = address length, low nibble = size length (ISO-14229)
+  uint8_t addr_bytes = (addr_len_fmt >> 4) & 0x0F;
+  uint8_t size_bytes = addr_len_fmt & 0x0F;
   
   if (addr_bytes == 0 || addr_bytes > 4 || size_bytes == 0 || size_bytes > 4) {
     handle_failure("Invalid address/size length format", NegativeResponseCode::GeneralReject);
@@ -629,8 +630,9 @@ std::vector<uint8_t> ECUProgrammer::encode_address_and_size(uint32_t address, ui
   // Add format identifier
   result.push_back(addr_len_fmt);
   
-  uint8_t addr_bytes = addr_len_fmt & 0x0F;
-  uint8_t size_bytes = (addr_len_fmt >> 4) & 0x0F;
+  // High nibble = address length, low nibble = size length (ISO-14229)
+  uint8_t addr_bytes = (addr_len_fmt >> 4) & 0x0F;
+  uint8_t size_bytes = addr_len_fmt & 0x0F;
   
   // Encode address (big-endian)
   for (int i = addr_bytes - 1; i >= 0; --i) {
