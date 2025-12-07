@@ -109,26 +109,34 @@ run-gtest: gtest
 		fi \
 	done
 
-# Coverage build (requires gcov, lcov for HTML)
-coverage: CXXFLAGS += $(COVERAGE_FLAGS)
-coverage: LDFLAGS += $(COVERAGE_LIBS)
+# Coverage build (requires lcov for HTML reports)
+# macOS: brew install lcov
+coverage: CXXFLAGS += --coverage -O0
+coverage: LDFLAGS += --coverage
 coverage: clean gtest
 	@echo "Running tests with coverage..."
 	@mkdir -p $(COVERAGE_DIR)
 	@for test in $(GTEST_BINS); do \
 		if [ -f "$$test" ]; then \
+			echo "Running: $$test"; \
 			./$$test || true; \
 		fi \
 	done
+	@echo ""
 	@echo "Generating coverage report..."
-	@gcov -o $(OBJ_DIR) $(SRCS) 2>/dev/null || true
-	@mv *.gcov $(COVERAGE_DIR)/ 2>/dev/null || true
-	@echo "Coverage files in $(COVERAGE_DIR)/"
+	@lcov --capture --directory $(OBJ_DIR) --output-file coverage.info --ignore-errors inconsistent 2>/dev/null || \
+		(echo "lcov not installed. Install with: brew install lcov" && exit 1)
+	@lcov --remove coverage.info '/usr/*' '/opt/*' '*/gtest/*' '/Applications/*' '*/v1/*' --output-file coverage.info --ignore-errors unused 2>/dev/null || true
+	@echo ""
+	@lcov --list coverage.info 2>/dev/null || true
+	@echo ""
 	@echo "Generating HTML coverage report..."
-	@lcov --capture --directory $(OBJ_DIR) --output-file coverage.info 2>/dev/null || \
-		echo "lcov not installed. Install with: brew install lcov"
 	@genhtml coverage.info --output-directory coverage_html 2>/dev/null || true
-	@if [ -d "coverage_html" ]; then echo "HTML report: coverage_html/index.html"; fi
+	@if [ -d "coverage_html" ]; then \
+		echo ""; \
+		echo "HTML report: coverage_html/index.html"; \
+		echo "Open with: open coverage_html/index.html"; \
+	fi
 
 # HTML coverage report (requires lcov) - alias for coverage
 coverage-report: coverage
