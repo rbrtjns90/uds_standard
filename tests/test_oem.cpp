@@ -292,7 +292,8 @@ TEST(OEMExtensions_RegisterKeyCalculator) {
     
     OEMExtensions ext;
     
-    bool registered = ext.register_key_calculator(0x01, [](const std::vector<uint8_t>& seed) {
+    // OEM security levels are 0x41-0x5E
+    bool registered = ext.register_key_calculator(0x41, [](const std::vector<uint8_t>& seed) {
         std::vector<uint8_t> key = seed;
         for (auto& b : key) b ^= 0xFF;
         return key;
@@ -300,7 +301,7 @@ TEST(OEMExtensions_RegisterKeyCalculator) {
     
     ASSERT_TRUE(registered);
     
-    auto calc = ext.get_key_calculator(0x01);
+    auto calc = ext.get_key_calculator(0x41);
     ASSERT_TRUE(calc.has_value());
 }
 
@@ -309,14 +310,15 @@ TEST(OEMExtensions_CalculateKey) {
     
     OEMExtensions ext;
     
-    ext.register_key_calculator(0x03, [](const std::vector<uint8_t>& seed) {
+    // OEM security levels are 0x41-0x5E
+    ext.register_key_calculator(0x43, [](const std::vector<uint8_t>& seed) {
         std::vector<uint8_t> key = seed;
         for (auto& b : key) b ^= 0xAA;
         return key;
     });
     
     std::vector<uint8_t> seed = {0x12, 0x34, 0x56, 0x78};
-    auto key = ext.calculate_key(0x03, seed);
+    auto key = ext.calculate_key(0x43, seed);
     
     ASSERT_TRUE(key.has_value());
     ASSERT_EQ(4, static_cast<int>(key->size()));

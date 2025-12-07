@@ -313,7 +313,10 @@ TEST(NRC_ConditionsNotCorrect) {
     
     auto nrc_opt = nrc::Interpreter::parse_from_response(response);
     ASSERT_TRUE(nrc_opt.has_value());
-    ASSERT_TRUE(nrc::Interpreter::is_recoverable(*nrc_opt));
+    // ConditionsNotCorrect is NOT recoverable - user must fix preconditions
+    ASSERT_FALSE(nrc::Interpreter::is_recoverable(*nrc_opt));
+    auto category = nrc::Interpreter::get_category(*nrc_opt);
+    ASSERT_TRUE(category == nrc::Category::ConditionsNotMet);
 }
 
 TEST(NRC_SecurityAccessDenied) {

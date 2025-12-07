@@ -219,8 +219,11 @@ test-all: dirs lib tests gtest
 	@legacy_passed=0; legacy_total=0; \
 	for test in $(TEST_BINS); do \
 		if [ -f "$$test" ]; then \
-			legacy_total=$$((legacy_total + 1)); \
 			testname=$$(basename $$test); \
+			case "$$testname" in \
+				fuzz_target_afl) continue ;; \
+			esac; \
+			legacy_total=$$((legacy_total + 1)); \
 			echo "Running: $$testname"; \
 			if $$test > /dev/null 2>&1; then \
 				echo "  ✓ PASSED"; \

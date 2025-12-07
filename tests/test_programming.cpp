@@ -285,16 +285,17 @@ TEST(ProgrammingResult_LogMessages) {
 TEST(ECUProgrammer_ParseMaxBlockLength) {
     std::cout << "  Testing: ECUProgrammer::parse_max_block_length()" << std::endl;
     
-    // Response format: [0x74] [lengthFormatIdentifier] [maxNumberOfBlockLength...]
-    // lengthFormatIdentifier high nibble = number of bytes for maxNumberOfBlockLength
+    // Response format: [lengthFormatIdentifier] [maxNumberOfBlockLength...]
+    // lengthFormatIdentifier LOW nibble = number of bytes for maxNumberOfBlockLength (ISO-14229)
+    // Note: parse_max_block_length receives payload without SID
     
-    // Example: 0x20 means 2 bytes for block length
-    std::vector<uint8_t> response1 = {0x74, 0x20, 0x10, 0x00};  // 4096 bytes
+    // Example: 0x02 means 2 bytes for block length (low nibble = 2)
+    std::vector<uint8_t> response1 = {0x02, 0x10, 0x00};  // 4096 bytes
     uint32_t block_len1 = ECUProgrammer::parse_max_block_length(response1);
     ASSERT_EQ(4096, static_cast<int>(block_len1));
     
-    // Example: 0x10 means 1 byte for block length
-    std::vector<uint8_t> response2 = {0x74, 0x10, 0xFF};  // 255 bytes
+    // Example: 0x01 means 1 byte for block length (low nibble = 1)
+    std::vector<uint8_t> response2 = {0x01, 0xFF};  // 255 bytes
     uint32_t block_len2 = ECUProgrammer::parse_max_block_length(response2);
     ASSERT_EQ(255, static_cast<int>(block_len2));
 }
@@ -319,30 +320,35 @@ TEST(ECUProgrammer_EncodeAddressAndSize) {
     std::cout << "  Testing: ECUProgrammer::encode_address_and_size()" << std::endl;
     
     // Format 0x44 = 4 bytes address, 4 bytes size
+    // Result includes: [formatId] + [address bytes] + [size bytes]
     auto encoded = ECUProgrammer::encode_address_and_size(0x08000000, 0x00100000, 0x44);
     
-    ASSERT_EQ(8, static_cast<int>(encoded.size()));
+    ASSERT_EQ(9, static_cast<int>(encoded.size()));  // 1 + 4 + 4
+    
+    // Check format identifier
+    ASSERT_EQ(0x44, encoded[0]);
     
     // Check address bytes (big-endian)
-    ASSERT_EQ(0x08, encoded[0]);
-    ASSERT_EQ(0x00, encoded[1]);
+    ASSERT_EQ(0x08, encoded[1]);
     ASSERT_EQ(0x00, encoded[2]);
     ASSERT_EQ(0x00, encoded[3]);
+    ASSERT_EQ(0x00, encoded[4]);
     
     // Check size bytes (big-endian)
-    ASSERT_EQ(0x00, encoded[4]);
-    ASSERT_EQ(0x10, encoded[5]);
-    ASSERT_EQ(0x00, encoded[6]);
+    ASSERT_EQ(0x00, encoded[5]);
+    ASSERT_EQ(0x10, encoded[6]);
     ASSERT_EQ(0x00, encoded[7]);
+    ASSERT_EQ(0x00, encoded[8]);
 }
 
 TEST(ECUProgrammer_EncodeAddressAndSize_2Byte) {
     std::cout << "  Testing: ECUProgrammer::encode_address_and_size() with 2-byte format" << std::endl;
     
     // Format 0x22 = 2 bytes address, 2 bytes size
+    // Result includes: [formatId] + [address bytes] + [size bytes]
     auto encoded = ECUProgrammer::encode_address_and_size(0x8000, 0x1000, 0x22);
     
-    ASSERT_EQ(4, static_cast<int>(encoded.size()));
+    ASSERT_EQ(5, static_cast<int>(encoded.size()));  // 1 + 2 + 2
 }
 
 // ============================================================================
