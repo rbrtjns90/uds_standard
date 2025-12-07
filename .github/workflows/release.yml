@@ -48,7 +48,7 @@ jobs:
         tar -czvf ${{ matrix.artifact_name }}.tar.gz release/
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.artifact_name }}.tar.gz
