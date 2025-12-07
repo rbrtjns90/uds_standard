@@ -109,7 +109,7 @@ run-gtest: gtest
 		fi \
 	done
 
-# Coverage build (requires gcov)
+# Coverage build (requires gcov, lcov for HTML)
 coverage: CXXFLAGS += $(COVERAGE_FLAGS)
 coverage: LDFLAGS += $(COVERAGE_LIBS)
 coverage: clean gtest
@@ -124,14 +124,14 @@ coverage: clean gtest
 	@gcov -o $(OBJ_DIR) $(SRCS) 2>/dev/null || true
 	@mv *.gcov $(COVERAGE_DIR)/ 2>/dev/null || true
 	@echo "Coverage files in $(COVERAGE_DIR)/"
-
-# HTML coverage report (requires lcov)
-coverage-report: coverage
 	@echo "Generating HTML coverage report..."
-	@lcov --capture --directory $(OBJ_DIR) --output-file $(COVERAGE_DIR)/coverage.info 2>/dev/null || \
+	@lcov --capture --directory $(OBJ_DIR) --output-file coverage.info 2>/dev/null || \
 		echo "lcov not installed. Install with: brew install lcov"
-	@genhtml $(COVERAGE_DIR)/coverage.info --output-directory $(COVERAGE_DIR)/html 2>/dev/null || true
-	@echo "HTML report: $(COVERAGE_DIR)/html/index.html"
+	@genhtml coverage.info --output-directory coverage_html 2>/dev/null || true
+	@if [ -d "coverage_html" ]; then echo "HTML report: coverage_html/index.html"; fi
+
+# HTML coverage report (requires lcov) - alias for coverage
+coverage-report: coverage
 
 # Run all tests
 run-tests: tests
@@ -285,6 +285,8 @@ sanitize: clean dirs lib tests
 	@echo "╚═══════════════════════════════════════════════════════════╝"
 	@echo ""
 	@for test in $(TEST_BINS); do \
+		testname=$$(basename $$test); \
+		case "$$testname" in fuzz_target_afl) continue ;; esac; \
 		echo "Running $$test with sanitizers..."; \
 		./$$test || exit 1; \
 	done
@@ -303,6 +305,8 @@ asan: clean dirs lib tests
 	@echo "╚═══════════════════════════════════════════════════════════╝"
 	@echo ""
 	@for test in $(TEST_BINS); do \
+		testname=$$(basename $$test); \
+		case "$$testname" in fuzz_target_afl) continue ;; esac; \
 		echo "Running $$test with ASan..."; \
 		./$$test || exit 1; \
 	done
@@ -321,6 +325,8 @@ ubsan: clean dirs lib tests
 	@echo "╚═══════════════════════════════════════════════════════════╝"
 	@echo ""
 	@for test in $(TEST_BINS); do \
+		testname=$$(basename $$test); \
+		case "$$testname" in fuzz_target_afl) continue ;; esac; \
 		echo "Running $$test with UBSan..."; \
 		./$$test || exit 1; \
 	done

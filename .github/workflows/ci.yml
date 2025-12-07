@@ -161,7 +161,15 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential lcov
+        sudo apt-get install -y build-essential lcov libgtest-dev
+        # Build and install gtest
+        cd /usr/src/gtest
+        sudo cmake .
+        sudo make
+        sudo cp lib/*.a /usr/lib/ 2>/dev/null || sudo cp *.a /usr/lib/
+
+    - name: Create build directories
+      run: mkdir -p build bin/tests
 
     - name: Build with coverage
       run: make coverage
