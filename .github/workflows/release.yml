@@ -62,12 +62,12 @@ jobs:
     
     steps:
     - name: Download Linux artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: uds-linux
 
     - name: Download macOS artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         name: uds-macos
 
