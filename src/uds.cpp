@@ -117,11 +117,13 @@ PositiveOrNegative Client::tester_present(bool suppress_response) {
 }
 
 PositiveOrNegative Client::security_access_request_seed(uint8_t level) {
-  return exchange(SID::SecurityAccess, { static_cast<uint8_t>((level<<1) | 0x01) });
+  // Level is already the odd subfunction value (0x01, 0x03, 0x05...)
+  return exchange(SID::SecurityAccess, { level });
 }
 
 PositiveOrNegative Client::security_access_send_key(uint8_t level, const std::vector<uint8_t>& key) {
-  std::vector<uint8_t> p{ static_cast<uint8_t>((level<<1) | 0x00) };
+  // Level is the odd seed subfunction; key subfunction is level + 1 (even)
+  std::vector<uint8_t> p{ static_cast<uint8_t>(level + 1) };
   p.insert(p.end(), key.begin(), key.end());
   return exchange(SID::SecurityAccess, p);
 }
@@ -293,29 +295,33 @@ PositiveOrNegative Client::read_dtc_information(uint8_t subFunction, const std::
 PositiveOrNegative Client::request_download(uint8_t dfi,
                                             const std::vector<uint8_t>& addr,
                                             const std::vector<uint8_t>& size) {
-  // Build: [DFI][ALFI|SLFI][ALEN|ADDR...][SLEN|SIZE...]
-  std::vector<uint8_t> p; p.reserve(2 + addr.size()+1 + size.size()+1);
+  // Build: [DFI][ALFI][memoryAddress][memorySize]
+  // ALFI: high nibble = address length, low nibble = size length
+  std::vector<uint8_t> p;
+  p.reserve(2 + addr.size() + size.size());
   p.push_back(dfi);
-  const uint8_t al = static_cast<uint8_t>(addr.size());
-  const uint8_t sl = static_cast<uint8_t>(size.size());
-  p.push_back(static_cast<uint8_t>(((al & 0x0F) << 4) | (sl & 0x0F)));
-  p.push_back(al); p.insert(p.end(), addr.begin(), addr.end());
-  p.push_back(sl); p.insert(p.end(), size.begin(), size.end());
+  const uint8_t al = static_cast<uint8_t>(addr.size() & 0x0F);
+  const uint8_t sl = static_cast<uint8_t>(size.size() & 0x0F);
+  p.push_back(static_cast<uint8_t>((al << 4) | sl));
+  p.insert(p.end(), addr.begin(), addr.end());
+  p.insert(p.end(), size.begin(), size.end());
   return exchange(SID::RequestDownload, p, timings_.p2_star);
 }
 
 PositiveOrNegative Client::request_upload(uint8_t dfi,
                                           const std::vector<uint8_t>& addr,
                                           const std::vector<uint8_t>& size) {
-  // Build: [DFI][ALFI|SLFI][ALEN|ADDR...][SLEN|SIZE...]
+  // Build: [DFI][ALFI][memoryAddress][memorySize]
+  // ALFI: high nibble = address length, low nibble = size length
   // Identical format to RequestDownload, different SID
-  std::vector<uint8_t> p; p.reserve(2 + addr.size()+1 + size.size()+1);
+  std::vector<uint8_t> p;
+  p.reserve(2 + addr.size() + size.size());
   p.push_back(dfi);
-  const uint8_t al = static_cast<uint8_t>(addr.size());
-  const uint8_t sl = static_cast<uint8_t>(size.size());
-  p.push_back(static_cast<uint8_t>(((al & 0x0F) << 4) | (sl & 0x0F)));
-  p.push_back(al); p.insert(p.end(), addr.begin(), addr.end());
-  p.push_back(sl); p.insert(p.end(), size.begin(), size.end());
+  const uint8_t al = static_cast<uint8_t>(addr.size() & 0x0F);
+  const uint8_t sl = static_cast<uint8_t>(size.size() & 0x0F);
+  p.push_back(static_cast<uint8_t>((al << 4) | sl));
+  p.insert(p.end(), addr.begin(), addr.end());
+  p.insert(p.end(), size.begin(), size.end());
   return exchange(SID::RequestUpload, p, timings_.p2_star);
 }
 
