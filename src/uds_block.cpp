@@ -81,7 +81,7 @@ std::vector<uint8_t> BlockTransferManager::encode_address_and_length(uint32_t ad
     std::vector<uint8_t> result;
     
     // Address and length format identifier
-    uint8_t format = ((length_bytes_ & 0x0F) << 4) | (address_bytes_ & 0x0F);
+    uint8_t format = ((address_bytes_ & 0x0F) << 4) | (length_bytes_ & 0x0F);
     result.push_back(format);
     
     // Memory address (big-endian)
@@ -123,7 +123,7 @@ bool BlockTransferManager::request_download(uint32_t address, uint32_t size, uin
         return false;
     }
     
-    uint8_t len_format = response.payload[0] >> 4;
+    uint8_t len_format = static_cast<uint8_t>(response.payload[0] & 0x0F);
     max_block = 0;
     for (uint8_t i = 0; i < len_format && i + 1 < response.payload.size(); ++i) {
         max_block = (max_block << 8) | response.payload[i + 1];
@@ -155,7 +155,7 @@ bool BlockTransferManager::request_upload(uint32_t address, uint32_t size, uint3
         return false;
     }
     
-    uint8_t len_format = response.payload[0] >> 4;
+    uint8_t len_format = static_cast<uint8_t>(response.payload[0] & 0x0F);
     max_block = 0;
     for (uint8_t i = 0; i < len_format && i + 1 < response.payload.size(); ++i) {
         max_block = (max_block << 8) | response.payload[i + 1];
