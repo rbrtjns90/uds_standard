@@ -328,7 +328,7 @@ make examples
 
 ### ECUs
 - Any ISO 14229-1 compliant ECU
-- Tested with automotive ECUs requiring flash programming
+- Needs Testing with automotive ECUs requiring flash programming
 
 ## License
 
